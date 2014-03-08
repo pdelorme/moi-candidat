@@ -36,11 +36,12 @@ class Thematique(models.Model):
 
 
 class Proposition(models.Model):
-    resume = models.TextField(u'résumé')
-    description = models.TextField()
-    source = models.TextField()
+    resume = models.TextField(u'résumé',max_length=5000)
+    description = models.TextField(max_length=20000,blank=True)
+    source = models.TextField(max_length=255,blank=True)
     thematique = models.ForeignKey(Thematique, verbose_name=u'thématique')
     candidat = models.ForeignKey(Candidat)
+    published = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.resume

@@ -25,13 +25,21 @@
 	{% endif %}
 
             <div class="posts">
-		{% for proposition in thematique.proposition_set.all %}
+		    {% for proposition in propositions %}
+		        {% if proposition.published = True %}
                 <section class="post">
+                    
                     <div class="post-description" id="proposition-{{ proposition.id }}">
                         <p>{{ proposition.resume }}</p>
+                        <!--
+                        {% if proposition.source %}
+                            <p><a href="{{ proposition.source }}">source</a></p>
+                        {% endif %}
+                        -->
                     </div>
                 </section>
-		{% endfor %}
+                {% endif %}
+		    {% endfor %}
             </div>
 
 	</form>
