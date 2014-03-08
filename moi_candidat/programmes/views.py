@@ -1,4 +1,6 @@
 import re
+import random
+import logging
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib.formtools.wizard.views import SessionWizardView
@@ -25,7 +27,7 @@ def indexproposition(request):
 
 
 def resultat(request):
-    votes = request.session['results']
+    chosen_props = request.session['results']
 
     candidats = Candidat.objects.all()
     candidats_total = candidats.count()
@@ -36,9 +38,10 @@ def resultat(request):
 
     results = []
     for candidat in candidats:
-        votes_per_candidat = Proposition.objects.filter(candidat=candidat.id, id__in=votes).count()
-        percent = int(votes_per_candidat/(thematiques_total * 1.0) * 100)
-        results.append((percent, candidat))
+        candidat_chosen_props = Proposition.objects.filter(candidat=candidat.id, id__in=chosen_props)
+        props_per_candidat = candidat_chosen_props.count()
+        percent = int(props_per_candidat/(thematiques_total * 1.0) * 100)
+        results.append((percent, candidat, candidat_chosen_props))
     results_sorted = sorted(results, key=lambda tup: tup[0], reverse=True)
     context = {'results': results_sorted}
     return render(request, 'resultat.html', context)
@@ -80,5 +83,9 @@ class ChoisirWizard(SessionWizardView):
         thematiques = Thematique.objects.all().order_by('id')
         for idx, t in enumerate(thematiques):
             if form_current == idx:
+                if t.proposition_set:
+                    propositions = list(t.proposition_set.all())
+                    random.shuffle(propositions)
                 context['thematique'] = t
+                context['propositions'] = propositions
         return context
