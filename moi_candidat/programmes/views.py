@@ -1,17 +1,31 @@
 import re
 import random
 import logging
+
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.contrib.formtools.wizard.views import SessionWizardView
+from django.contrib.formtools.wizard.views import CookieWizardView
+from django.db.models import Count
+from django.db import transaction
 
-from programmes.models import Candidat, Proposition, Thematique
+from programmes.models import Candidat, Proposition, Thematique, ChoixProposition, ChoixCandidat
 from programmes.forms import ThematiqueForm
 
-
+from moi_candidat import settings
 
 def index(request):
-    return render(request, 'index.html')
+    
+    top_choix = ChoixProposition.objects.extra(select={'count': 'count(1)'}, 
+                                    order_by=['-count']).values('count', 'proposition')[:10]
+    top_choix.query.group_by = ['proposition_id']
+   
+    top_candidats = ChoixCandidat.objects.extra(select={'count': 'count(1)'}, 
+                                    order_by=['-count']).values('count', 'candidat')[:3]
+    top_candidats.query.group_by = ['candidat_id']
+    context = {'top_choix': top_choix,'top_candidats': top_candidats}
+    
+    request.session['foo'] = 'bar' # pour initialiser la session
+    return render(request, 'index.html', context)
 
 
 def indexcandidat(request):
@@ -26,15 +40,25 @@ def indexproposition(request):
     return render(request, 'indexProposition.html', context)
 
 
+@transaction.commit_on_success
 def resultat(request):
     chosen_props = request.session['results']
 
     candidats = Candidat.objects.all()
-    candidats_total = candidats.count()
-    propositions = Proposition.objects.all()
-    propositions_total = propositions.count()
     thematiques = Thematique.objects.all()
     thematiques_total = thematiques.count()
+
+    #sauve les choix de propositions apres avoir supprime les anciennes le cas echeant
+    ancienChoixPropositions = ChoixProposition.objects.filter(session=request.session.session_key)
+    for choixProp in ancienChoixPropositions:
+        choixProp.delete()
+        
+    for prop in chosen_props:
+        cp = ChoixProposition()
+        cp.proposition = Proposition.objects.get(pk=prop)
+        cp.origin = "ip:" + get_client_ip(request)
+        cp.session = request.session.session_key
+        cp.save()
 
     results = []
     for candidat in candidats:
@@ -43,9 +67,28 @@ def resultat(request):
         percent = int(props_per_candidat/(thematiques_total * 1.0) * 100)
         results.append((percent, candidat, candidat_chosen_props))
     results_sorted = sorted(results, key=lambda tup: tup[0], reverse=True)
+    
+    # sauve le choix de candidat apres avoir supprime l'ancien le cas echeant
+    ancienChoixCandidat = ChoixCandidat.objects.filter(session=request.session.session_key)
+    for choixCand in ancienChoixCandidat:
+        choixCand.delete()
+    cc = ChoixCandidat()
+    cc.candidat = results_sorted[0][1] # 1er candidat
+    cc.percent = results_sorted[0][0]
+    cc.origin = "ip:" + get_client_ip(request)
+    cc.session = request.session.session_key
+    cc.save()
+        
     context = {'results': results_sorted}
     return render(request, 'resultat.html', context)
 
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 def get_thematique_forms():
     count = Thematique.objects.all().order_by('id').count()
@@ -53,7 +96,6 @@ def get_thematique_forms():
     if not thematique_forms:
         return [ThematiqueForm]
     return thematique_forms
-
 
 def programmes(request):
     candidats = Candidat.objects.all()
@@ -63,7 +105,7 @@ def programmes(request):
     return render(request, 'programme.html', context)
 
 
-class ChoisirWizard(SessionWizardView):
+class ChoisirWizard(CookieWizardView):
     form_list = get_thematique_forms()
     template_name = 'choisir.html'
 
@@ -86,6 +128,19 @@ class ChoisirWizard(SessionWizardView):
                 if t.proposition_set:
                     propositions = list(t.proposition_set.all())
                     random.shuffle(propositions)
+                    
+                    #limite le nombre de propositions par candidats
+                    candidats = Candidat.objects.all();
+                    for candidat in candidats:
+                        nbPropositions = t.proposition_set.filter(candidat__id=candidat.id).count()
+                        toRemove = nbPropositions - settings.MAX_PROPOSITIONS_PER_CANDIDATES
+                        if toRemove > 0: 
+                            propositionsParCandidat = t.proposition_set.filter(candidat__id=candidat.id)
+                            while toRemove > 0:  
+                                logging.debug('thematique ' + t.nom + ', proposition supprimee ' + propositionsParCandidat[toRemove-1].resume)
+                                propositions.remove(propositionsParCandidat[toRemove-1])
+                                toRemove = toRemove -1
+    
                 context['thematique'] = t
                 context['propositions'] = propositions
         return context

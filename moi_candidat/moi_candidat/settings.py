@@ -36,6 +36,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sessions',
     'programmes',
 )
 
@@ -45,6 +46,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.transaction.TransactionMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
@@ -52,6 +54,10 @@ ROOT_URLCONF = 'moi_candidat.urls'
 
 WSGI_APPLICATION = 'moi_candidat.wsgi.application'
 
+#SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+#SESSION_COOKIE_HTTPONLY = True
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+SESSION_COOKIE_AGE = 2419200 # 4 semaines
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
@@ -81,6 +87,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 
 STATIC_URL = '/static/'
+
+MAX_PROPOSITIONS_PER_CANDIDATES = 2
 
 try:
     from local_settings import *

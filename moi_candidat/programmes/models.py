@@ -17,7 +17,7 @@ class Candidat(models.Model):
     partis = models.ManyToManyField(Parti)
 
     def __unicode__(self):
-        return self.nom
+        return self.nom + ' ' + self.prenom
 
     def parti_list(self):
         partis = [p.nom for p in self.partis.all()]
@@ -27,7 +27,8 @@ class Candidat(models.Model):
 
 class Thematique(models.Model):
     nom = models.CharField(max_length=200)
-
+    #image = models.FileField(upload_to='thematiques', blank=True)
+    
     class Meta:
         verbose_name = u'thématique'
 
@@ -41,7 +42,26 @@ class Proposition(models.Model):
     source = models.TextField(max_length=255,blank=True)
     thematique = models.ForeignKey(Thematique, verbose_name=u'thématique')
     candidat = models.ForeignKey(Candidat)
-    published = models.BooleanField(default=True)
+    published = models.BooleanField(default=True, verbose_name=u'publié')
 
     def __unicode__(self):
         return self.resume
+    
+class ChoixProposition(models.Model):
+    creation = models.DateField(auto_now_add=True)
+    session = models.CharField(max_length=255,blank=True)
+    origin = models.CharField(max_length=255,blank=True)
+    proposition = models.ForeignKey(Proposition)
+
+    def __unicode__(self):
+        return self.proposition.resume + ' at ' + self.creation
+
+class ChoixCandidat(models.Model):
+    creation = models.DateField(auto_now_add=True)
+    session = models.CharField(max_length=255,blank=True)
+    origin = models.CharField(max_length=255,blank=True)
+    candidat = models.ForeignKey(Candidat)
+    percent = models.DecimalField(max_digits=4, decimal_places=2,blank=True)
+
+    def __unicode__(self):
+        return self.candidat + ' at ' + self.creation
