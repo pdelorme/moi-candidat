@@ -8,8 +8,7 @@ class CandidatAdmin(admin.ModelAdmin):
 
 
 class PropositionAdmin(admin.ModelAdmin):
-    list_display = ('resume', 'source', 'candidat', 'thematique')
-
+    list_display = ('resume', 'source', 'candidat', 'thematique', 'published')
 
 admin.site.register(Parti)
 admin.site.register(Candidat,CandidatAdmin)
