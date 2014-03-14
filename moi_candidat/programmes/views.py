@@ -40,7 +40,7 @@ def indexproposition(request):
     return render(request, 'indexProposition.html', context)
 
 
-@transaction.commit_on_success
+@transaction.atomic
 def resultat(request):
     chosen_props = request.session['results']
 
@@ -50,8 +50,10 @@ def resultat(request):
 
     #sauve les choix de propositions apres avoir supprime les anciennes le cas echeant
     ancienChoixPropositions = ChoixProposition.objects.filter(session=request.session.session_key)
+    choixUpdated = False
     for choixProp in ancienChoixPropositions:
         choixProp.delete()
+        choixUpdated = True
         
     for prop in chosen_props:
         cp = ChoixProposition()
@@ -79,7 +81,7 @@ def resultat(request):
     cc.session = request.session.session_key
     cc.save()
         
-    context = {'results': results_sorted}
+    context = {'results': results_sorted, 'choixUpdated': choixUpdated}
     return render(request, 'resultat.html', context)
 
 def get_client_ip(request):

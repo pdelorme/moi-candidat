@@ -57,6 +57,7 @@ WSGI_APPLICATION = 'moi_candidat.wsgi.application'
 #SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 #SESSION_COOKIE_HTTPONLY = True
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_AGE = 2419200 # 4 semaines
 
 # Database
