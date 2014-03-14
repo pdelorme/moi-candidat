@@ -4,7 +4,8 @@ from django.db import models
 
 class Parti(models.Model):
     nom = models.CharField(max_length=200)
-    
+    image = models.FileField(upload_to='partis', blank=True)
+        
     def __unicode__(self):
         return self.nom
 
@@ -27,7 +28,7 @@ class Candidat(models.Model):
 
 class Thematique(models.Model):
     nom = models.CharField(max_length=200)
-    #image = models.FileField(upload_to='thematiques', blank=True)
+    image = models.FileField(upload_to='thematiques', blank=True)
     
     class Meta:
         verbose_name = u'thématique'
@@ -54,7 +55,7 @@ class ChoixProposition(models.Model):
     proposition = models.ForeignKey(Proposition)
 
     def __unicode__(self):
-        return self.proposition.resume + ' at ' + self.creation
+        return self.proposition.resume + ' at ' + self.creation.isoformat()
 
 class ChoixCandidat(models.Model):
     creation = models.DateField(auto_now_add=True)
@@ -64,4 +65,4 @@ class ChoixCandidat(models.Model):
     percent = models.DecimalField(max_digits=4, decimal_places=2,blank=True)
 
     def __unicode__(self):
-        return self.candidat + ' at ' + self.creation
+        return self.candidat + ' at ' + self.creation.isoformat()
