@@ -45,13 +45,13 @@
 	</form>
 	<script>
 	$(function() {
-		console.log('ready...');
+		//console.log('ready...');
 		proposition = $("input[name*='proposition']")
-		console.log(proposition);
+		//console.log(proposition);
 		$(".post-description").bind("click", function() {
-			console.log( "Handler for .click() called." );
-			console.log($(this).attr('id'));
-			console.log($(this).attr('id').match(/\d+/)[0]);
+			//console.log( "Handler for .click() called." );
+			//console.log($(this).attr('id'));
+			//console.log($(this).attr('id').match(/\d+/)[0]);
 			choose = $(this).attr('id').match(/\d+/)[0];
 			proposition.val(choose);
 			$('#thematique').submit();
